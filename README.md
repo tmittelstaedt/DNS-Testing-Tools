@@ -20,6 +20,9 @@ DNS servers.  Both sides are just as bad.  But ultimately the DNS server service
 your customers does not create trust.
 
 dns-proxy-test.pl                   Powershell script to detect transparent proxies
+
 dns-proxy-test-README.html          HTML README file for the script
+
 dns-proxy-test.html                 HTML Documentation
+
 dns-proxy-test.MSWord-README.docx   Microsoft Word documentation on the script
