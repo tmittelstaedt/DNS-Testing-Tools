@@ -26,3 +26,17 @@ dns-proxy-test-README.html          HTML README file for the script
 dns-proxy-test.html                 HTML Documentation
 
 dns-proxy-test.MSWord-README.docx   Microsoft Word documentation on the script
+
+dig-DoH-basic.ps1                   Construct and send DNS over HTTPS request packet
+
+dig-standard-ps-libraries.ps1       Make a standard DNS query using the Powershell DNS APIs
+
+dig-udp-constructed-nsid-simple.ps1  Basic implementation of a DNS query that sends DNS queries through the Powershell APIs
+
+dig-udp-constructed-nsid.ps1        Send a NSID query over UDP
+
+dig-udp-tcp-constructed-nsid.ps1    Send the NSID query over UDP first then switch to TCP.
+
+dig-udp-tcp-constructed-nsidREADME-MSWord.docx   MS Word version of documentation
+
+dig-udp-tcp-constructed-nsidREADME.html    HTML version of the documents
