@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DNS Transparent Proxy Detection Script - README</title>
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.5; margin: 20px; }
+    h1, h2, h3 { color: #003366; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    code { background-color: #f9f9f9; padding: 2px 4px; font-family: Consolas, monospace; }
+    pre { background-color: #f9f9f9; padding: 10px; border: 1px solid #ccc; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>DNS Transparent Proxy Detection Script – README</h1>
+
+<h2>Overview</h2>
+<p>
+This PowerShell script runs a series of DNS tests to detect the presence of transparent DNS proxies, DNS manipulation, or unusual resolver behavior.
+It can run <code>dig</code> locally (if <code>dig.exe</code> is available) or remotely via SSH to a Linux/Unix host with <code>dig</code> installed.
+</p>
+<p>The script supports 8 individual tests and an "All Tests" mode.</p>
+
+<h2>Requirements</h2>
+<h3>Windows</h3>
+<ul>
+    <li>PowerShell 5.1 or later (included in Windows 10/11)</li>
+    <li><code>dig.exe</code> for Windows (optional if running locally)
+        <ul>
+            <li>Download from:
+                <ul>
+                    <li><a href="https://www.isc.org/download/">ISC BIND Windows ZIP</a> (choose "BIND" → "Windows ZIP")</li>
+                    <li><a href="https://www.bind9.net/download">BIND9.net Download</a></li>
+                </ul>
+            </li>
+            <li>Extract <code>dig.exe</code> into the same folder as this script.</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Remote SSH Option</h3>
+<ul>
+    <li>A Linux/Unix host with:
+        <ul>
+            <li><code>dig</code> installed (<code>sudo apt install dnsutils</code> on Debian/Ubuntu, <code>sudo yum install bind-utils</code> on CentOS/RHEL)</li>
+            <li>SSH access enabled</li>
+        </ul>
+    </li>
+    <li>Windows must have <code>ssh.exe</code> available (included in Windows 10/11).</li>
+</ul>
+
+<h2>Installation</h2>
+<ol>
+    <li>Download the script and save it as:
+        <pre>dns-proxy-test.ps1</pre>
+    </li>
+    <li>Optional: Download <code>dig.exe</code> for Windows and place it in the same folder as the script.</li>
+    <li>Open PowerShell and navigate to the script folder:
+        <pre>cd "C:\path\to\script"</pre>
+    </li>
+    <li>Allow script execution (if not already enabled):
+        <pre>Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass</pre>
+    </li>
+</ol>
+
+<h2>Usage</h2>
+<pre>.\dns-proxy-test.ps1</pre>
+<p>You will be prompted to:</p>
+<ol>
+    <li>Choose local or remote mode.</li>
+    <li>Select a root DNS server from the provided list.</li>
+    <li>Select a test (1–8) or Run All Tests (option 9).</li>
+</ol>
+
+<h2>Test Descriptions</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Test #</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>PASS Criteria</th>
+            <th>FAIL Criteria</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>NSID Check</td>
+            <td>Sends an EDNS(0) NSID request to the root server.</td>
+            <td>NSID is returned (server identity visible).</td>
+            <td>No NSID returned (proxy may be stripping EDNS options).</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>RA Bit Check</td>
+            <td>Queries root server with recursion disabled.</td>
+            <td>RA bit is not set.</td>
+            <td>RA bit is set (proxy may be answering recursively).</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>Custom EDNS Option Echo</td>
+            <td>Sends a custom EDNS option (code 65001) with test data.</td>
+            <td>Option is echoed back.</td>
+            <td>Option missing (proxy may be altering packets).</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>Large DNSSEC UDP Response / TC Bit</td>
+            <td>Requests DNSSEC DNSKEY with small buffer size (+ignore).</td>
+            <td>TC bit is set (expected for large UDP responses).</td>
+            <td>TC bit not set (proxy may be altering packet size or forcing TCP).</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>Malformed/Unusual Query</td>
+            <td>Sends a mixed-case label with uncommon QTYPE (TYPE65).</td>
+            <td>NXDOMAIN returned.</td>
+            <td>Unexpected response (proxy may be rewriting queries).</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>Long Label + Private QTYPE</td>
+            <td>Sends a long label with private-use QTYPE (65534).</td>
+            <td>NXDOMAIN returned.</td>
+            <td>Unexpected response.</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>Glue TTL Consistency</td>
+            <td>Checks TTL values of glue A/AAAA records in Additional section.</td>
+            <td>All TTLs match.</td>
+            <td>TTLs inconsistent (proxy or resolver may be altering glue records).</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>Transparent Proxy Detection via Bogus IP</td>
+            <td>Sends a standard DNS query to a non-existent IP address (192.0.2.123) with a short timeout (3s) and no retries.</td>
+            <td>
+                <ul>
+                    <li>DNS <code>status:</code> present → Transparent proxy likely (response from nonexistent IP)</li>
+                    <li>Output contains "timed out" → No transparent proxy (query to nonexistent IP timed out)</li>
+                </ul>
+            </td>
+            <td>Unexpected output or no output at all.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Example Run</h2>
+<pre>
+Found dig.exe in current directory.
+Do you want to run the local dig instead of using SSH? (Y/N): Y
+Select a root server to query:
+[1] A-root (198.41.0.4)
+[2] B-root (199.9.14.201)
+[3] C-root (192.33.4.12)
+Enter number: 1
+Select DNS test type:
+[1] NSID check
+[2] RA bit check
+[3] Custom EDNS option echo
+[4] Large DNSSEC UDP response TC bit
+[5] Malformed/unusual query
+[6] Long-label + private QTYPE stress test
+[7] Glue TTL consistency check
+[8] Transparent proxy detection via bogus IP
+[9] Run ALL tests
+Enter number: 9
+Running Test 1...
+=== dig Output ===
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345
+...
+=== Result ===
+PASS: NSID found -> 646e732d7365727665722d31
+...
+=== Summary ===
+Test Result
+---- ------
+1    PASS: NSID found -> 646e732d7365727665722d31
+2    PASS: RA bit not set (expected)
+...
+8    PASS: No transparent proxy (query to nonexistent IP timed out)
+</pre>
+
+<h2>Tips</h2>
+<ul>
+    <li>If running remotely, ensure your SSH key or password authentication works before starting.</li>
+    <li>If you see <strong>"No output from dig"</strong>, check firewall rules and that the root server IP is reachable.</li>
+    <li>You can add more root servers to the <code>$rootServers</code> array in the script.</li>
+</ul>
+
+<h2>References</h2>
+<ul>
+    <li><a href="https://bind9.readthedocs.io/">BIND 9 Administrator Reference Manual</a></li>
+    <li><a href="https://datatracker.ietf.org/doc/html/rfc6891">EDNS(0) – RFC 6891</a></li>
+    <li><a href="https://datatracker.ietf.org/doc/html/rfc5001">NSID – RFC 5001</a></li>
+</ul>
+
+</body>
+</html>
