@@ -1,7 +1,5 @@
 Here you will find a variety of Powershell DNS testing tools.  I wrote these to take advantage of the capabilities of Powershell to make DNS queries.
-While Microsoft still ships the program "nslookup" with Windows, that program has limited functionality and is considered obsolete.  The replacement
-program, named "dig", for many years had a Windows command-line version maintained by the ISC.  Unfortunately, code changes in the ISC BIND distribution
-would have required a large amount of effort to rewrite the Windows version of "dig" so the ISC abandonded it.
+While Microsoft still ships the program "nslookup" with Windows, that program has limited functionality and is considered obsolete.  The replacement program, named "dig", for many years had a Windows command-line version maintained by the ISC.  Unfortunately, code changes in the ISC BIND distribution would have required a large amount of effort to rewrite the Windows version of "dig" so the ISC abandoned it.  I do not know of anyone who has taken on the work of porting the newest version to Windows.]
 
 Microsoft offers 2 APIs for DNS.  The first is a Winsock API that is fairly full featured the second is a Powershell cmdlet which is less featured and
 is unable to make several kinds of DNS queries.  So some of the Powershell scripts here assemble the DNS query packet manually and use the raw
